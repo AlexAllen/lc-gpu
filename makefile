@@ -21,7 +21,7 @@ endif
 # Hercules (Computer 1.3) : -arch=compute_13 -code=sm_13,sm_20
 
 NVCC_OPTS = -arch=compute_20 -code=sm_20 ${DEBUG_OR_OPT} --compiler-options -Wall
-EXEC_NAME = casey
+EXEC_NAME = Casey
 
 
 #Override implicit rules so we generate dependency files

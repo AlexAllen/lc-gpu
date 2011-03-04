@@ -1,4 +1,5 @@
 #include <iostream>
+#include <curand_kernel.h>
 using namespace std;
 
 const int k1tok3 = 1;
@@ -9,7 +10,7 @@ const int arraySize = xblocks*threadDim * yblocks*threadDim + 2; // penultimate 
 
 #include "bitsnbobs.cu"
 
-__global__ monte_kernel(double *nx, double *ny, double *inp, curandState *state, double aoa, double iTk, int offset);
+__global__ void monte_kernel(double *nx, double *ny, bool *inp, curandState *state, double aoa, double iTk, int offset);
 __global__ void energy_kernel(double *nx, double *ny, bool *inp, double *blockEnergies);
 
 int main()
@@ -65,11 +66,11 @@ int main()
 		if(!(j%10)) cout << "\r" << 100 * j / loopMax << "%                          ";
 	}
 
-	cout << "100%                   " << endl;
+	cout << "\r100%                   " << endl;
 
         energy_kernel<<<blocks, threads>>>(dev_nx, dev_ny, dev_inp, dev_blockEnergies);
 	danErrHndl( cudaMemcpy(blockEnergies, dev_blockEnergies, xblocks*yblocks*sizeof(double), cudaMemcpyDeviceToHost) );
-	energy = 0
+	energy = 0;
 	for(i=0; i<xblocks*yblocks; i++)
 	{
 		energy += blockEnergies[i];
@@ -80,7 +81,7 @@ int main()
 	return 0;
 }
 
-__global__ void monte_kernel(double *nx, double *ny, double *inp, curandState *state, double aoa, double iTk, int offset)
+__global__ void monte_kernel(double *nx, double *ny, bool *inp, curandState *state, double aoa, double iTk, int offset)
 {
 
 	// calculate cell of interest
@@ -105,8 +106,8 @@ __global__ void monte_kernel(double *nx, double *ny, double *inp, curandState *s
 	before += calcEnergy(x,y+1,nx,ny);
 	before += calcEnergy(x,y-1,nx,ny);
 
-	nx[index] = cos(angle)*nx -sin(angle)*ny;
-	ny[index] = sin(angle)*nx + cos(angle)*ny;
+	nx[index] = cos(angle)*nx[index] - sin(angle)*ny[index];
+	ny[index] = sin(angle)*nx[index] + cos(angle)*ny[index];
 
 	after = calcEnergy(x,y,nx,ny);
 	after += calcEnergy(x+1,y,nx,ny);
@@ -119,7 +120,7 @@ __global__ void monte_kernel(double *nx, double *ny, double *inp, curandState *s
 	if(dE>0)
 	{
 		rollOfTheDice = curand_uniform(&state[ID]);
-		if(rollOfTheDice > exp(-dE*beta)) // then reject change
+		if(rollOfTheDice > exp(-dE*iTk)) // then reject change
 		{
 			nx[index] = oldNx;
 			ny[index] = oldNy;
