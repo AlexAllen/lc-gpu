@@ -1,0 +1,6 @@
+#ignore executable
+casey
+#ignore object files
+*.o
+#ignore dependency files
+*.dep
