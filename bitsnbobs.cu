@@ -8,7 +8,7 @@ const int width = xblocks*threadDim;
 const int height = yblocks*threadDim;
 
 // Initialises grid as random
-void gridInit(double nx[], double ny[], int size);
+void gridInit(double nx[], double ny[], bool inp[], int size);
 
 // A proper mod function that always works
 __device__ int mod(int a, int b);
@@ -22,7 +22,10 @@ __device__ double AdotB(double ax, double ay, double bx, double by);
 // Calculates the energy of the cell
 __device__ double calcEnergy(int x, int y, double *nx, double *ny);
 
-void gridInit(double nx[], double ny[], int size)
+// Dan's error handling CUDA
+bool danErrHndl(cudaError_t error);
+
+void gridInit(double nx[], double ny[], bool inp[], int size)
 {
 	int i;
 	double angle; 
@@ -33,6 +36,7 @@ void gridInit(double nx[], double ny[], int size)
 		angle = rnd()*2*PI;
 		nx[i] = cos(angle);
 		ny[i] = sin(angle);
+		inp[i] = false;
 	}
 
 	// These are the top and bottom boundary conditions respectively
@@ -135,4 +139,19 @@ __device__ double calcEnergy(int x, int y, double *nx, double *ny)
 
 	// Put them all together for total energy
 	return 0.5*(firstTerm + k1tok3*secondTerm*thirdTerm);
+}
+
+bool danErrHndl(cudaError_t error)
+{
+	switch(error)
+	{
+		case cudaSuccess:
+		return true;
+
+
+		default:
+		cerr << "OMG I failed. I suck. Infact I suck in this particular way: " << cudaGetErrorString(error) << endl;
+		return false;
+	}	
+
 }
