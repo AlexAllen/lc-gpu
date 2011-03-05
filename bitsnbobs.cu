@@ -39,12 +39,16 @@ void gridInit(double nx[], double ny[], bool inp[], int size)
 		inp[i] = false;
 	}
 
-	// These are the top and bottom boundary conditions respectively
+	//Initialise Top boundary condition
 	nx[i] = 1;
 	ny[i] = 0;
+	inp[i] = false;
 	i++;
+	
+	//Initialise bottom boundary condition
 	nx[i] = 0;
 	ny[i] = 1;
+	inp[i] = false;
 }
 
 __device__ inline int mod(int a, int b)
