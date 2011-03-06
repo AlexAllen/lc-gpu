@@ -106,8 +106,9 @@ __global__ void monte_kernel(double *nx, double *ny, bool *inp, curandState *sta
 	before += calcEnergy(x,y+1,nx,ny);
 	before += calcEnergy(x,y-1,nx,ny);
 
-	nx[index] = cos(angle)*nx[index] - sin(angle)*ny[index];
-	ny[index] = sin(angle)*nx[index] + cos(angle)*ny[index];
+	//rotate director anti-clockwise by angle "angle"
+	nx[index] = cos(angle)*oldNx - sin(angle)*oldNy;
+	ny[index] = sin(angle)*oldNx + cos(angle)*oldNy;
 
 	after = calcEnergy(x,y,nx,ny);
 	after += calcEnergy(x+1,y,nx,ny);
