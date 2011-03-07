@@ -4,7 +4,7 @@
 NVCC = nvcc
 
 #Set final executable name
-EXEC_NAME = casey
+EXEC_NAME = Casey
 
 #Set the default mode.
 debug=0

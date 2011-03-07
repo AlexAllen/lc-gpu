@@ -1,11 +1,12 @@
 #include "randgen.cpp"
 #include <ctime>
 #include <cmath>
+#include <fstream>
+#include <iostream>
+using namespace std;
 
 // wolframalpha ftw!
 const double PI = 3.1415926535897932384626433832795028841971693993751058209749; 
-const int width = xblocks*threadDim;
-const int height = yblocks*threadDim;
 
 // Initialises grid as random
 void gridInit(double nx[], double ny[], bool inp[], int size);
@@ -24,6 +25,9 @@ __device__ double calcEnergy(int x, int y, double *nx, double *ny);
 
 // Dan's error handling CUDA
 bool danErrHndl(cudaError_t error);
+
+// Prints the grid to file
+void outputGrid(double nx[], double ny[], bool inp[], char filename[]);
 
 void gridInit(double nx[], double ny[], bool inp[], int size)
 {
@@ -158,4 +162,43 @@ bool danErrHndl(cudaError_t error)
 		return false;
 	}	
 
+}
+
+void outputGrid(double nx[], double ny[], bool inp[], char filename[])
+{
+	int i;
+	ofstream out(filename);
+	if(!out)
+	{
+		cout << "Opening files is way overrated. You didn't really want it done anyway.\n";
+		exit(-9);
+	}
+
+	out << "# Boundary Conditions\n";
+	for(i=-1;i<width+1;i++) // top and bottom
+	{
+		out << (double) i - 0.5*nx[arraySize-1] << " " << -1.0 - 0.5*ny[arraySize-1] << " " << nx[arraySize-1] << " " << ny[arraySize-1] << endl;
+		out << (double) i - 0.5*nx[arraySize-2] << " " << (double) height-0.5*ny[arraySize-2] << " " << nx[arraySize-2] << " " << ny[arraySize-2] << endl;
+	}
+	for(i=0;i<height;i++) // left and right periodic
+	{
+		out << -1.0 - 0.5*nx[width*(i+1)-1] << " " << (double) i- 0.5*ny[width*(i+1)-1] << " " << nx[width*(i+1)-1] << " " << ny[width*(i+1)-1] << endl;
+		out << (double) width- 0.5*nx[width*i]  << " " << (double)i-0.5*ny[width*i] << " " << nx[width*i] << " " << ny[width*i] << endl;
+	}
+
+	out << "\n\n\n";
+
+	out << "# Liquid Crystal bits\n";
+	for(i=0; i<height*width; i++)
+        {
+		if(!inp[i]) out << (double) (i%width) - 0.5*nx[i] << " " << (double) (i/width) -0.5*ny[i] << " " << nx[i] << " " << ny[i] << endl;
+	}
+
+	out << "\n\n\n";
+
+	out << "# Nanoparticles\n";
+	for(i=0; i<height*width; i++)
+	{
+		if(inp[i]) out << (double) (i%width) -0.5*nx[i] << " " << (double) (i/width)-0.5*ny[i] << " " << nx[i] << " " << ny[i] << endl;
+	}
 }

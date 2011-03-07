@@ -4,8 +4,10 @@ using namespace std;
 
 const int k1tok3 = 1;
 const int threadDim = 8;
-const int xblocks = 10;
-const int yblocks = 10;
+const int xblocks = 4;
+const int yblocks = 2;
+const int height = yblocks*threadDim;
+const int width = xblocks*threadDim;
 const int arraySize = xblocks*threadDim * yblocks*threadDim + 2; // penultimate cell in array is top boundary, final is bottom boundry
 
 #include "bitsnbobs.cu"
@@ -15,9 +17,10 @@ __global__ void energy_kernel(double *nx, double *ny, bool *inp, double *blockEn
 
 int main()
 {
-	int i, j, loopMax = 10000;
+	int i, j, loopMax = 100000;
 	double nx[arraySize], ny[arraySize], *dev_nx, *dev_ny;
 	bool inp[arraySize], *dev_inp; // is nanoparticle
+	char filename[] = "grid.dump";
 	double energy, blockEnergies[xblocks*yblocks], *dev_blockEnergies;
 	double aoa = PI*0.5, iTk = 1;
 	curandState *dev_state;
@@ -77,6 +80,10 @@ int main()
 	}
 
 	cout << "Final energy is: " << energy << endl;
+
+	cudaMemcpy(nx, dev_nx, arraySize*sizeof(double), cudaMemcpyDeviceToHost);
+	cudaMemcpy(ny, dev_ny, arraySize*sizeof(double), cudaMemcpyDeviceToHost);
+	outputGrid(nx, ny, inp, filename);
 	
 	return 0;
 }
