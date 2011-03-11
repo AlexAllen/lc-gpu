@@ -50,8 +50,8 @@ void gridInit(double nx[], double ny[], bool inp[], int size)
 	i++;
 	
 	//Initialise bottom boundary condition
-	nx[i] = 0;
-	ny[i] = 1;
+	nx[i] = 1;
+	ny[i] = 0;
 	inp[i] = false;
 }
 
@@ -109,26 +109,18 @@ __device__ double calcEnergy(int x, int y, double *nx, double *ny)
 	// Do derivative calculations, flipping if smallest angle between vectors is > PI/2
 	if( AdotB( nx[index[3]], ny[index[3]], flip*nx[index[2]], flip*ny[index[2]] )<0 ) flip *= -1;
 	dnxdx_f = nx[index[3]] - flip*nx[index[2]];
-
-	if( AdotB( flip*nx[index[2]], flip*ny[index[2]], nx[index[1]], ny[index[1]] )<0 ) flip *= -1;
-	dnxdx_b = flip*nx[index[2]] - nx[index[1]];
-
-	if( AdotB( nx[index[4]], ny[index[4]], flip*nx[index[2]], flip*ny[index[2]] )<0 ) flip *= -1;
-	dnxdy_f = nx[index[4]] - flip*nx[index[2]];
-
-	if( AdotB( flip*nx[index[2]], flip*ny[index[2]], nx[index[0]], ny[index[0]] )<0 ) flip *= -1;
-	dnxdy_b = flip*nx[index[2]] - nx[index[0]];
-
-	if( AdotB( nx[index[3]], ny[index[3]], flip*nx[index[2]], flip*ny[index[2]] )<0 ) flip *= -1;
 	dnydx_f = ny[index[3]] - flip*ny[index[2]];
 
 	if( AdotB( flip*nx[index[2]], flip*ny[index[2]], nx[index[1]], ny[index[1]] )<0 ) flip *= -1;
+	dnxdx_b = flip*nx[index[2]] - nx[index[1]];
 	dnydx_b = flip*ny[index[2]] - ny[index[1]];
 
 	if( AdotB( nx[index[4]], ny[index[4]], flip*nx[index[2]], flip*ny[index[2]] )<0 ) flip *= -1;
+	dnxdy_f = nx[index[4]] - flip*nx[index[2]];
 	dnydy_f = ny[index[4]] - flip*ny[index[2]];
 
 	if( AdotB( flip*nx[index[2]], flip*ny[index[2]], nx[index[0]], ny[index[0]] )<0 ) flip *= -1;
+	dnxdy_b = flip*nx[index[2]] - nx[index[0]];
 	dnydy_b = flip*ny[index[2]] - ny[index[0]];
 
 	// Calculate each of the terms of the Frank equation
