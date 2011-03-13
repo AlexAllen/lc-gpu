@@ -1,10 +1,11 @@
-
+#include <fstream>
 #include <curand_kernel.h>
 using namespace std;
 
+const char fn[] = "annealing.dump";
 const int threadDim = 8;
-const int xblocks = 20;
-const int yblocks = 20;
+const int xblocks = 4;
+const int yblocks = 4;
 const int height = yblocks*threadDim;
 const int width = xblocks*threadDim;
 const int k1tok3 = 1;
@@ -21,15 +22,20 @@ __global__ void empty_kernel(int *hits)
 
 int main()
 {
-	cout << height << " " << width << endl;
-	int i, j, loopMax = 10000;
+	int i, j, loopMax = 500000;
 	double nx[arraySize], ny[arraySize], *dev_nx, *dev_ny;
 	bool inp[arraySize], *dev_inp; // is nanoparticle
 	char filename[] = "grid.dump";
 	double energy, blockEnergies[xblocks*yblocks], *dev_blockEnergies;
-	double aoa = PI*0.5, iTk = 1;
+	double aoa = PI*0.5, iTk = 0.05;
 	int *dev_hits;
 	curandState *dev_state;
+	ofstream out(fn);
+	if(!out)
+	{
+		cout << "Opening files FTL!" << endl;
+		return -180;
+	}
 
 	// Initialise grid
 	gridInit(nx, ny, inp, arraySize);
@@ -75,33 +81,48 @@ int main()
 	{
 		for(i=0;i<8;i++)
 		{
-			monte_kernel<<<lessBlocks, threads>>>(dev_nx, dev_ny, dev_inp, dev_state, dev_hits, aoa, iTk, i);
+			monte_kernel<<<lessBlocks, threads>>>(dev_nx, dev_ny, dev_inp, dev_state, dev_hits, aoa, iTk, intRnd()%8);
 		}
 
-		cudaMemcpy(hits, dev_hits, xblocks*yblocks*sizeof(int)/8, cudaMemcpyDeviceToHost);
+		if(!(j%10))
+		{
+			danErrHndl( cudaMemcpy(hits, dev_hits, xblocks*yblocks*sizeof(int)/8, cudaMemcpyDeviceToHost) );
 			
-	        totalHits = 0;
-	        for(int i=0;i<xblocks*yblocks/8;i++)
-	        {
-	                totalHits += hits[i];
-	        	hits[i] = 0;
-	        }
+	        	totalHits = 0;
+	        	for(int i=0;i<xblocks*yblocks/8;i++)
+	        	{
+	        	        totalHits += hits[i];
+	       		 	hits[i] = 0;
+	        	}
 
-		cout << totalHits << " " << width*height << " " << 2* (double) totalHits / (width*height) << endl;
+	        	if( aoa > 0.002 ) aoa *= 2 * (double) totalHits / (width*height);
+	        	if( aoa > PI*0.5) aoa = 0.5*PI;
+	       		if( aoa < 0.002 ) aoa = 0.002;
+		}
 
-	        if( aoa > 0.01 ) aoa *= 2 * (double) totalHits / (width*height);
-	        if( aoa > PI*0.5) aoa = 0.5*PI;
-	       	if( aoa < 0.01 ) aoa = 0.01;
-
-	        if(!(j%30))
+	        if(!(j%500))
 	        {
 	        	iTk *= 1.01;
+			if(iTk > 1e7 ) iTk = 1e7;
 	        }
 
-		cudaMemcpy(dev_hits, hits, xblocks*yblocks*sizeof(int)/8, cudaMemcpyHostToDevice);
+		if(!(j%1000))
+		{
+			energy_kernel<<<blocks, threads>>>(dev_nx, dev_ny, dev_inp, dev_blockEnergies);
+			danErrHndl( cudaMemcpy(blockEnergies, dev_blockEnergies, xblocks*yblocks*sizeof(double), cudaMemcpyDeviceToHost) );
+			energy = 0;
+       			for(int k=0; k<xblocks*yblocks; k++)
+        		{
+                		energy += blockEnergies[k];
+        		}
+
+			out << j << " " << aoa << " " << iTk << " " << energy << endl;
+		}
+
+		danErrHndl( cudaMemcpy(dev_hits, hits, xblocks*yblocks*sizeof(int)/8, cudaMemcpyHostToDevice) );
 
 		
-	//	if(!(j%100)) cout << "\r" << (double) 100 * j / loopMax << "%                          ";
+		if(!(j%100)) cout << "\r" << (double) 100 * j / loopMax << "%                          ";
 		
 	}
 
@@ -119,8 +140,8 @@ int main()
 	cout << "Final energy is: " << energy << endl;
 
 	// Get the finished arrays back and dump to file in a dans-gnuplot-script friendly way
-	cudaMemcpy(nx, dev_nx, arraySize*sizeof(double), cudaMemcpyDeviceToHost);
-	cudaMemcpy(ny, dev_ny, arraySize*sizeof(double), cudaMemcpyDeviceToHost);
+	danErrHndl( cudaMemcpy(nx, dev_nx, arraySize*sizeof(double), cudaMemcpyDeviceToHost));
+	danErrHndl( cudaMemcpy(ny, dev_ny, arraySize*sizeof(double), cudaMemcpyDeviceToHost));
 	cout << aoa << " " << iTk << endl;
 	outputGrid(nx, ny, inp, filename);
 	
