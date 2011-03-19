@@ -15,7 +15,7 @@ void gridInit(double nx[], double ny[], bool inp[], int size);
 __device__ int mod(int a, int b);
 
 // Returns a cell inside the grid for x, y
-__device__ double getIndex(int x, int y);
+__device__ int getIndex(int x, int y);
 
 // Calculate A dot B
 __device__ double AdotB(double ax, double ay, double bx, double by);
@@ -60,7 +60,7 @@ __device__ inline int mod(int a, int b)
 	return (a%b + b)%b;
 }
 
-__device__ double getIndex(int x, int y)
+__device__ int getIndex(int x, int y)
 {
 	if(y<height && y>=0)
 	{
@@ -136,6 +136,7 @@ __device__ double calcEnergy(int x, int y, double *nx, double *ny)
 	thirdTerm += (dnydx_b - dnxdy_f)*(dnydx_b - dnxdy_f);
 	thirdTerm += (dnydx_f - dnxdy_b)*(dnydx_f - dnxdy_b);
 	thirdTerm += (dnydx_b - dnxdy_b)*(dnydx_b - dnxdy_b);
+	thirdTerm /= 4;
 
 	// Put them all together for total energy
 	return 0.5*(firstTerm + k1tok3*secondTerm*thirdTerm);
