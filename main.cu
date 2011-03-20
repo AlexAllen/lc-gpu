@@ -22,7 +22,7 @@ __global__ void empty_kernel(int *hits)
 
 int main()
 {
-	int i, j, loopMax = 1000000;
+	int i, j, loopMax = 5000000;
 	double nx[arraySize], ny[arraySize], *dev_nx, *dev_ny;
 	bool inp[arraySize], *dev_inp; // is nanoparticle
 	char filename[] = "grid.dump";
@@ -100,7 +100,7 @@ int main()
 	       		if( aoa < 0.002 ) aoa = 0.002;
 		}
 
-	        if(!(j%500))
+	        if(!(j%1000))
 	        {
 	        	iTk *= 1.01;
 			if(iTk > 1e7 ) iTk = 1e7;
