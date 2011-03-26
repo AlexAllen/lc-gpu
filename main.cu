@@ -1,16 +1,16 @@
+#include <sstream>
 #include <fstream>
 #include <curand_kernel.h>
 using namespace std;
 
 const char fn[] = "annealing.dump";
 const int threadDim = 8;
-const int xblocks = 4;
-const int yblocks = 4;
+const int xblocks = 40;
+const int yblocks = 40;
 const int height = yblocks*threadDim;
 const int width = xblocks*threadDim;
 const int k1tok3 = 1;
 const int arraySize = xblocks*threadDim * yblocks*threadDim + 2; // penultimate cell in array is top boundary, final is bottom boundry
-
 #include "bitsnbobs.cu"
 
 __global__ void monte_kernel(double *nx, double *ny, bool *inp, curandState *state, int *hits, double aoa, double iTk,  int offset);
@@ -20,9 +20,9 @@ __global__ void empty_kernel(int *hits)
 	hits[blockIdx.x + blockIdx.y*gridDim.x] = 0;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-	int i, j, loopMax = 5000000;
+	int i, j, loopMax;
 	double nx[arraySize], ny[arraySize], *dev_nx, *dev_ny;
 	bool inp[arraySize], *dev_inp; // is nanoparticle
 	char filename[] = "grid.dump";
@@ -30,7 +30,20 @@ int main()
 	double aoa = PI*0.5, iTk = 0.05;
 	int *dev_hits;
 	curandState *dev_state;
-	ofstream out(fn);
+	stringstream annealing(stringstream::out);
+	stringstream grid(stringstream::out);
+
+	if(argc<2)
+	{
+		cout << "MOAR ARGUMENTS!\n";
+		return -69;
+	}
+	loopMax = atoi(argv[1]);
+
+	annealing << loopMax << "-" << fn;
+	grid << loopMax << "-" << filename;
+
+	ofstream out(annealing.str().c_str());
 	if(!out)
 	{
 		cout << "Opening files FTL!" << endl;
@@ -142,8 +155,7 @@ int main()
 	// Get the finished arrays back and dump to file in a dans-gnuplot-script friendly way
 	danErrHndl( cudaMemcpy(nx, dev_nx, arraySize*sizeof(double), cudaMemcpyDeviceToHost));
 	danErrHndl( cudaMemcpy(ny, dev_ny, arraySize*sizeof(double), cudaMemcpyDeviceToHost));
-	cout << aoa << " " << iTk << endl;
-	outputGrid(nx, ny, inp, filename);
+	outputGrid(nx, ny, inp, grid);
 	
 	return 0;
 }

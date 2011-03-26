@@ -1,3 +1,4 @@
+#include <sstream>
 #include "randgen.cpp"
 #include <ctime>
 #include <cmath>
@@ -27,7 +28,7 @@ __device__ double calcEnergy(int x, int y, double *nx, double *ny);
 bool danErrHndl(cudaError_t error);
 
 // Prints the grid to file
-void outputGrid(double nx[], double ny[], bool inp[], char filename[]);
+void outputGrid(double nx[], double ny[], bool inp[], const stringstream& grid);
 
 void gridInit(double nx[], double ny[], bool inp[], int size)
 {
@@ -157,10 +158,10 @@ bool danErrHndl(cudaError_t error)
 
 }
 
-void outputGrid(double nx[], double ny[], bool inp[], char filename[])
+void outputGrid(double nx[], double ny[], bool inp[], const stringstream& grid)
 {
 	int i;
-	ofstream out(filename);
+	ofstream out(grid.str().c_str());
 	if(!out)
 	{
 		cout << "Opening files is way overrated. You didn't really want it done anyway.\n";
