@@ -5,8 +5,8 @@ using namespace std;
 
 const char fn[] = "annealing.dump";
 const int threadDim = 8;
-const int xblocks = 40;
-const int yblocks = 40;
+const int xblocks = 4;
+const int yblocks = 4;
 const int height = yblocks*threadDim;
 const int width = xblocks*threadDim;
 const int k1tok3 = 1;
@@ -22,7 +22,7 @@ __global__ void empty_kernel(int *hits)
 
 int main(int argc, char *argv[])
 {
-	int i, j, loopMax;
+	int i, j, loopMax = 5000000;
 	double nx[arraySize], ny[arraySize], *dev_nx, *dev_ny;
 	bool inp[arraySize], *dev_inp; // is nanoparticle
 	char filename[] = "grid.dump";
@@ -33,15 +33,18 @@ int main(int argc, char *argv[])
 	stringstream annealing(stringstream::out);
 	stringstream grid(stringstream::out);
 
-	if(argc<2)
+	if(argc<3)
 	{
 		cout << "MOAR ARGUMENTS!\n";
 		return -69;
 	}
-	loopMax = atoi(argv[1]);
+	int anneal = atoi(argv[1]);
+	int arate = atoi(argv[2]);
+	if(anneal<1) anneal = 1; 
+	if(arate<1) arate = 1; 
 
-	annealing << loopMax << "-" << fn;
-	grid << loopMax << "-" << filename;
+	annealing << anneal << "-" << arate << "-" << fn;
+	grid << anneal << "-" << arate << "-" << filename;
 
 	ofstream out(annealing.str().c_str());
 	if(!out)
@@ -97,7 +100,7 @@ int main(int argc, char *argv[])
 			monte_kernel<<<lessBlocks, threads>>>(dev_nx, dev_ny, dev_inp, dev_state, dev_hits, aoa, iTk, intRnd()%8);
 		}
 
-		if(!(j%10))
+		if(!(j%arate))
 		{
 			danErrHndl( cudaMemcpy(hits, dev_hits, xblocks*yblocks*sizeof(int)/8, cudaMemcpyDeviceToHost) );
 			
@@ -113,7 +116,7 @@ int main(int argc, char *argv[])
 	       		if( aoa < 0.002 ) aoa = 0.002;
 		}
 
-	        if(!(j%1000))
+	        if(!(j%anneal))
 	        {
 	        	iTk *= 1.01;
 			if(iTk > 1e7 ) iTk = 1e7;

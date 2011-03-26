@@ -51,8 +51,8 @@ void gridInit(double nx[], double ny[], bool inp[], int size)
 	i++;
 	
 	//Initialise bottom boundary condition
-	nx[i] = 0;
-	ny[i] = 1;
+	nx[i] = 1;
+	ny[i] = 0;
 	inp[i] = false;
 }
 
